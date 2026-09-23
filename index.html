@@ -60,6 +60,9 @@ h1{font-size:1.9rem;margin:0;color:var(--brand);letter-spacing:-.01em}
 .ticks span{position:absolute;top:8px;transform:translateX(-50%);font-size:.95rem;color:var(--muted);white-space:nowrap}
 .row{display:flex;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
+.row.ro-d1{border-bottom:1px dashed var(--line)}
+.row.pairend{border-bottom:3px solid var(--line)}
+.row.ro-d2 .track{background-color:color-mix(in srgb,var(--board) 85%,var(--muted) 15%)}
 .lab{position:sticky;left:0;z-index:2;background:var(--panel);flex:0 0 auto;border-right:1px solid var(--line);padding:6px 8px;display:flex;align-items:center;gap:6px}
 .lab input{width:100%;border:1px solid transparent;background:transparent;border-radius:5px;padding:3px 5px;font-weight:700}
 .lab input:hover{border-color:var(--line)}
@@ -79,6 +82,8 @@ h1{font-size:1.9rem;margin:0;color:var(--brand);letter-spacing:-.01em}
 .blk.sel{border-color:var(--sel);box-shadow:0 0 0 2px var(--sel) inset}
 .blk.bad{border-color:var(--danger);border-style:dashed}
 .blk.bad .n::after{content:" !";color:var(--danger)}
+.blk.ro{cursor:pointer}
+.blk.dd2{box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
 .blk.dragging{cursor:grabbing;opacity:.9;z-index:5;box-shadow:0 6px 18px rgba(0,0,0,.18)}
 .blk .h{position:absolute;right:0;top:0;bottom:0;width:12px;cursor:ew-resize}
 .blk .h::after{content:"";position:absolute;right:3px;top:30%;bottom:30%;width:2px;border-radius:2px;background:currentColor;opacity:.35}
@@ -98,9 +103,11 @@ aside{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-
 .issues li.w{background:var(--warn-soft);color:var(--warn)}
 .ok{color:var(--brand);font-size:.9rem;margin:0}
 .leaders{display:flex;flex-direction:column;gap:6px}
-.leaders .lr{display:flex;align-items:center;gap:8px;font-size:1rem}
+.leaders .lr{display:flex;align-items:center;gap:8px;font-size:1rem;min-width:0}
+.leaders .lr>span:last-child{min-width:0;overflow-wrap:anywhere;flex:1}
+.leaders .lr .t{display:inline;white-space:normal}
 .leaders input{flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:4px 6px}
-.leaders .t{color:var(--muted);white-space:nowrap}
+.leaders .t{color:var(--muted)}
 dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);max-width:min(640px,92vw);width:100%}
 dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-size:.8rem;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
@@ -113,12 +120,12 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
   <header>
     <div>
       <h1>BROCOLD – testschema</h1>
-      <p class="sub">Dra ett moment för att flytta det, dra i högerkanten för att ändra längd. Klicka för att redigera.</p>
+      <p class="sub" id="subt">Dra ett moment för att flytta det, dra i högerkanten för att ändra längd. Klicka för att redigera.</p>
     </div>
-    <div class="tools">
+    <div class="tools"><span id="syncStat" class="field" style="align-self:center"></span>
       <button class="btn" id="undo" title="Ångra (Ctrl+Z)">Ångra</button>
-      <button class="btn" id="exportBtn">Exportera data</button>
-      <button class="btn" id="importBtn">Importera data</button>
+      <button class="btn" id="pngBtn">Spara som bild</button>
+      <button class="btn" id="sheetBtn">Google Sheets</button>
       <button class="btn" id="resetBtn">Återställ förslaget</button>
     </div>
   </header>
@@ -127,6 +134,7 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
     <div class="seg" role="group" aria-label="Testdag">
       <button data-day="d1">Dag 1 – labbtester</button>
       <button data-day="d2">Dag 2 – fysiologiska tester</button>
+      <button data-day="all">Båda dagarna</button>
     </div>
     <div class="seg" role="group" aria-label="Visa rader per">
       <button data-mode="person">Per testperson</button>
@@ -137,6 +145,7 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
     <label class="field" id="dlField">Sista start för blodprov <input type="time" id="deadline" step="300"></label>
   </div>
 
+  <p id="roNote" class="sub" style="display:none;margin:0 0 10px">Översikten läses från flikarna Dag 1 och Dag 2 och visar dem som om de körs samma dag (tis–tor). Ändra i respektive flik. Testledare med samma namn räknas som samma person, så krockar mellan dagarna syns i konfliktrutan.</p>
   <div class="stats" id="stats"></div>
   <div class="lokleg" id="lokleg" style="margin:0 0 12px"></div>
 
@@ -146,7 +155,7 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
       <div class="boardfoot">
         <button class="btn" id="addPerson">Lägg till testperson</button>
         <button class="btn" id="addBlock">Lägg till moment</button>
-        <span class="hint">Pilar flyttar valt moment 5 min · Delete tar bort</span>
+        <span class="hint" id="hint">Pilar flyttar valt moment 5 min · Delete tar bort</span>
       </div>
     </div>
     <aside>
@@ -159,12 +168,17 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
 
 <dialog id="dlg">
   <form method="dialog">
-    <h2 id="dlgTitle" style="margin:0 0 10px;font-size:1.05rem"></h2>
-    <p id="dlgText" class="empty" style="margin:0 0 8px"></p>
-    <textarea id="dlgArea" spellcheck="false"></textarea>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+    <h2 style="margin:0 0 10px;font-size:1.2rem">Koppla till Google Sheets</h2>
+    <p class="empty" style="margin:0 0 12px">Klistra in webbadressen till Apps Script-webbappen och koden (TOKEN) som står i skriptet. Därefter sparas varje ändring i kalkylarket, och sidan hämtar senaste versionen när den öppnas.</p>
+    <div class="form">
+      <label for="sUrl">Webbapp-adress</label><input type="text" id="sUrl" placeholder="https://script.google.com/macros/s/…/exec">
+      <label for="sTok">Kod (TOKEN)</label><input type="text" id="sTok" autocomplete="off">
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:14px">
       <button class="btn" value="cancel">Stäng</button>
-      <button class="btn primary" id="dlgOk" value="ok">Kopiera</button>
+      <button class="btn" id="sOff" type="button">Koppla bort</button>
+      <button class="btn" id="sPull" type="button">Hämta från kalkylarket</button>
+      <button class="btn primary" id="sSave" type="button">Spara och koppla</button>
     </div>
   </form>
 </dialog>
@@ -212,13 +226,27 @@ if(!S||!S.days||!S.days.d1)S=defaults();
     d.blocks.forEach(b=>{if(b.lokal===undefined)b.lokal=""})}
   if(!S.mig2){applyLok(S.days);const l=S.days.d2&&S.days.d2.leaders.find(x=>x.id==="TL1");if(l&&(l.name==="Filip"||/^TL/.test(l.name)))l.name="Eva";S.mig2=true}})();
 let sel=null;const undoStack=[];
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof schedulePush==="function")schedulePush()};
 const snap=()=>{undoStack.push(JSON.stringify(S.days));if(undoStack.length>60)undoStack.shift();$("undo").disabled=false};
 const $=id=>document.getElementById(id);
-const D=()=>S.days[S.day];
+const RO=()=>S.day==="all";
+function combined(){
+  const names=[],pal=["TL1","TL2","TL3","TL4"],map={};
+  const out={persons:[],leaders:[],blocks:[]};
+  for(const k of ["d1","d2"]){const d=S.days[k];if(!d)continue;
+    d.leaders.forEach(l=>{if(!names.includes(l.name))names.push(l.name)})}
+  names.forEach((n,i)=>{const id=pal[i]||("TLx"+i);map[n]=id;out.leaders.push({id,name:n,role:""})});
+  for(const k of ["d1","d2"]){const d=S.days[k];if(!d)continue;const tag=k==="d1"?"Dag 1":"Dag 2";
+    d.persons.forEach(p=>out.persons.push({id:k+":"+p.id,name:tag+" "+p.name}));
+    d.blocks.forEach(b=>{const l=d.leaders.find(x=>x.id===b.tl);out.blocks.push({...b,id:k+":"+b.id,pid:k+":"+b.pid,tl:l?map[l.name]:"",day:k})})}
+  out.leaders.forEach(l=>{const roles=[];for(const k of ["d1","d2"]){const x=(S.days[k]||{leaders:[]}).leaders.find(y=>y.name===l.name);if(x&&x.role)roles.push((k==="d1"?"Dag 1: ":"Dag 2: ")+x.role)}l.role=roles.join(" · ")});
+  return out;
+}
+let _cmb=null;
+const D=()=>S.day==="all"?(_cmb||combined()):S.days[S.day];
 const lname=id=>{const l=D().leaders.find(x=>x.id===id);return l?l.name:id};
 const toast=msg=>{const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("on"),2600)};
-const LABW=()=>S.mode==="person"?130:S.mode==="lokal"?150:260;
+const LABW=()=>RO()?(S.mode==="person"?170:200):S.mode==="person"?130:S.mode==="lokal"?150:260;
 
 function range(){
   const b=D().blocks;if(!b.length)return[420,960];
@@ -253,13 +281,26 @@ function conflicts(){
 
 function rows(){
   const d=D();
+  if(RO()){
+    const out=[];
+    if(S.mode==="person"){const a=S.days.d1.persons,b=S.days.d2.persons;
+      for(let i=0;i<Math.max(a.length,b.length);i++){
+        if(a[i])out.push({key:"d1:"+a[i].id,label:"Dag 1 · "+a[i].name,kind:"ro",day:"d1",pair:i});
+        if(b[i])out.push({key:"d2:"+b[i].id,label:"Dag 2 · "+b[i].name,kind:"ro",day:"d2",pair:i})}
+      return out}
+    const base=S.mode==="lokal"?LOK.map(l=>({k:l.id,n:l.id})).concat([{k:"",n:"Ingen lokal"}]):d.leaders.map(l=>({k:l.id,n:l.name})).concat([{k:"",n:"Utan testledare"}]);
+    base.forEach((x,i)=>["d1","d2"].forEach(dy=>{const key=x.k+"|"+dy;
+      if(d.blocks.some(b=>rowOf(b)===key))out.push({key,label:x.n,kind:"ro",day:dy,pair:i,sw:x.k?(S.mode==="lokal"?lokC(x.k):`var(${TLC[x.k]?TLC[x.k][0]:"--none"})`):""})}));
+    return out}
   if(S.mode==="person")return d.persons.map(p=>({key:p.id,label:p.name,kind:"person"}));
   if(S.mode==="lokal")return LOK.map(l=>({key:l.id,label:l.id,kind:"lokal"})).concat([{key:"",label:"Ingen lokal",kind:"lokal"}]);
   return d.leaders.map(l=>({key:l.id,label:l.name,kind:"leader"})).concat([{key:"",label:"Utan testledare",kind:"leader"}]);
 }
-const rowOf=b=>S.mode==="person"?b.pid:S.mode==="lokal"?(b.lokal||""):(b.tl||"");
+const rowOf=b=>S.mode==="person"?b.pid:(RO()?((S.mode==="lokal"?(b.lokal||""):(b.tl||""))+"|"+b.day):(S.mode==="lokal"?(b.lokal||""):(b.tl||"")));
 
 function render(){
+  _cmb=S.day==="all"?combined():null;
+  $("roNote").style.display=RO()?"":"none";$("hint").style.display=RO()?"none":"";$("subt").textContent=RO()?"Översikt över båda testdagarna. Klicka på ett moment för att se detaljerna.":"Dra ett moment för att flytta det, dra i högerkanten för att ändra längd. Klicka för att redigera.";$("addPerson").style.display=$("addBlock").style.display=RO()?"none":"";
   document.querySelectorAll("[data-day]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.day===S.day));
   document.querySelectorAll("[data-mode]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.mode===S.mode));
   $("zoom").value=S.zoom;$("deadline").value=m2t(S.deadline);$("dlField").style.display=S.day==="d1"?"":"none";
@@ -276,7 +317,11 @@ function render(){
   rows().forEach((r,ri)=>{
     const row=document.createElement("div");row.className="row";row.dataset.key=r.key;
     const lab=document.createElement("div");lab.className="lab";lab.style.width=lw+"px";
-    if(r.kind==="person"){
+    if(r.kind==="ro"){
+      if(r.sw){const sw=document.createElement("span");sw.className="sw";sw.style.background=r.sw;lab.appendChild(sw)}
+      const s=document.createElement("span");s.innerHTML=S.mode==="person"?`<b>${esc(r.label)}</b>`:`<b>${esc(r.label)}</b><br><span style="color:var(--muted);font-size:.85rem">${r.day==="d1"?"Dag 1":"Dag 2"}</span>`;lab.appendChild(s);
+      row.classList.add("ro-"+r.day);if(r.day==="d2")row.classList.add("pairend")}
+    else if(r.kind==="person"){
       const inp=document.createElement("input");inp.value=r.label;inp.setAttribute("aria-label","Namn på testperson");
       inp.onchange=()=>{snap();d.persons.find(p=>p.id===r.key).name=inp.value||"?";save();render()};
       const x=document.createElement("button");x.className="x";x.textContent="✕";x.title="Ta bort testperson";
@@ -311,10 +356,11 @@ function blockEl(b,isBad,lo,ppm){
   const pname=(d.persons.find(p=>p.id===b.pid)||{}).name||"";
   e.innerHTML=`<span class="n"></span><span class="m"></span><span class="h" aria-hidden="true"></span>`;
   if(b.lokal){const lk=document.createElement("span");lk.className="lk";lk.style.background=lokC(b.lokal);e.appendChild(lk)}
-  e.querySelector(".n").textContent=S.mode==="person"?b.name:`${pname} ${b.name}`;
+  e.querySelector(".n").textContent=S.mode==="person"?b.name:`${RO()?pname.replace(/^Dag \d /,""):pname} ${b.name}`;
   const extra=[S.mode!=="leader"&&b.tl?lname(b.tl):"",S.mode!=="lokal"&&b.lokal?b.lokal:""].filter(Boolean).join(" · ");
   e.querySelector(".m").textContent=`${m2t(b.start)}–${m2t(b.start+b.dur)}${extra?" · "+extra:""}`;
   e.title=`${pname}: ${b.name}\n${m2t(b.start)}–${m2t(b.start+b.dur)} (${b.dur} min)${b.tl?"\nTestledare: "+lname(b.tl):""}${b.lokal?"\nLokal: "+b.lokal:""}${b.station?"\nStation: "+b.station:""}${b.fast?"\nFastande":""}`;
+  if(RO()){e.classList.add("ro");if(b.day==="d2")e.classList.add("dd2");e.addEventListener("click",()=>{sel=b.id;render()});e.addEventListener("keydown",ev=>{if(ev.key==="Enter"){sel=b.id;render();focusSel()}});return e}
   e.addEventListener("pointerdown",ev=>startDrag(ev,b,e));
   e.addEventListener("keydown",ev=>keyBlock(ev,b));
   return e;
@@ -356,22 +402,30 @@ function keyBlock(ev,b){
   else if(k==="Delete"||k==="Backspace"){ev.preventDefault();snap();D().blocks=D().blocks.filter(x=>x.id!==b.id);sel=null;save();render()}
   else if(k==="Enter"){sel=b.id;render();focusSel()}
 }
-const focusSel=()=>{const e=document.querySelector(`.blk[data-id="${sel}"]`);if(e)e.focus({preventScroll:true})};
+const focusSel=()=>{const e=document.querySelector(`.blk[data-id="${CSS.escape(sel||"")}"]`);if(e)e.focus({preventScroll:true})};
 
 function renderStats(){
   const d=D(),el=$("stats");el.innerHTML="";
   const n=d.persons.length,week=n*4;
   const add=h=>{const s=document.createElement("div");s.className="stat";s.innerHTML=h;el.appendChild(s)};
-  add(`<b>${n}</b> testpersoner per dag · <b>${week}</b> per vecka (4 testdagar) · 60 deltagare på <b>${week?Math.ceil(60/week):"–"}</b> veckor`);
+  if(RO())add(`<b>${S.days.d1.persons.length}</b> testpersoner dag 1 · <b>${S.days.d2.persons.length}</b> dag 2 samma dag`);
+  else add(`<b>${n}</b> testpersoner per dag · <b>${week}</b> per vecka (4 testdagar) · 60 deltagare på <b>${week?Math.ceil(60/week):"–"}</b> veckor`);
   const all=d.blocks;if(all.length){add(`Dagen ${m2t(Math.min(...all.map(b=>b.start)))}–${m2t(Math.max(...all.map(b=>b.start+b.dur)))}`)}
   d.leaders.forEach(l=>{const bs=all.filter(b=>b.tl===l.id);if(!bs.length)return;
     const busy=bs.reduce((s,b)=>s+b.dur,0),a=Math.min(...bs.map(b=>b.start)),z=Math.max(...bs.map(b=>b.start+b.dur));
-    add(`<span class="sw" style="background:var(${TLC[l.id][0]})"></span>${esc(l.name)}: ${m2t(a)}–${m2t(z)}, aktiv ${Math.round(busy/(z-a)*100)} %`)});
+    add(`<span class="sw" style="background:var(${TLC[l.id]?TLC[l.id][0]:"--none"})"></span>${esc(l.name)}: ${m2t(a)}–${m2t(z)}, aktiv ${Math.round(busy/(z-a)*100)} %`)});
   const lg=$("lokleg");lg.innerHTML="<span>Lokal (färgad list under momentet):</span>"+LOK.map(l=>{const n=all.filter(b=>b.lokal===l.id).length;return `<span><i style="background:var(${l.c})"></i>${l.id} (${n})</span>`}).join("")+`<span>Utan lokal (${all.filter(b=>!b.lokal).length})</span>`;
 }
 
 function renderEditor(){
   const d=D(),el=$("editor"),b=d.blocks.find(x=>x.id===sel);
+  if(RO()){
+    if(!b){el.innerHTML=`<p class="empty">Klicka på ett moment för att se detaljerna. Ändringar görs i flikarna Dag 1 och Dag 2.</p>`;return}
+    const pn=(d.persons.find(p=>p.id===b.pid)||{}).name||"";
+    const rowsH=[["Dag",b.day==="d1"?"Dag 1":"Dag 2"],["Testperson",pn.replace(/^Dag \d /,"")],["Moment",b.name],["Tid",`${m2t(b.start)}–${m2t(b.start+b.dur)} (${b.dur} min)`],["Testledare",b.tl?lname(b.tl):"Ingen"],["Lokal",b.lokal||"Ingen"],["Station",b.station||"–"],["Fastande",b.fast?"Ja":"Nej"]];
+    el.innerHTML=`<div class="form">${rowsH.map(([k,v])=>`<label>${k}</label><span>${esc(v)}</span>`).join("")}<div class="full"><button class="btn" id="goEdit">Redigera i ${b.day==="d1"?"Dag 1":"Dag 2"}</button></div></div>`;
+    $("goEdit").onclick=()=>{const id=b.id.split(":")[1];S.day=b.day;sel=id;R=range();save();render();focusSel()};
+    return}
   if(!b){el.innerHTML=`<p class="empty">Klicka på ett moment i schemat för att ändra namn, tid, testledare eller station.</p>`;return}
   const stations=[...new Set(d.blocks.map(x=>x.station).filter(Boolean))];
   el.innerHTML=`<div class="form">
@@ -403,15 +457,20 @@ function renderEditor(){
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 function renderIssues(out){
-  const el=$("issues");
+  const el=$("issues");el.innerHTML="";
   if(!out.length){el.innerHTML=`<p class="ok">Inga krockar. Varje testledare, station och testperson används bara av en i taget.</p>`;return}
+  if(RO()){const cnt={};out.forEach(i=>{const m=i.msg.match(/^(.+?) dubbelbokad/);if(m)cnt[m[1]]=(cnt[m[1]]||0)+1});
+    const sm=Object.entries(cnt).map(([k,v])=>`${k}: ${v}`).join(" · ");
+    if(sm){const p=document.createElement("p");p.className="empty";p.style.margin="0 0 8px";p.textContent="Dubbelbokningar per testledare – "+sm;el.appendChild(p)}}
   const ul=document.createElement("ul");ul.className="issues";
-  out.sort((a,b)=>(a.t==="e"?0:1)-(b.t==="e"?0:1)).forEach(i=>{const li=document.createElement("li");if(i.t==="w")li.className="w";li.textContent=i.msg;li.onclick=()=>{sel=i.ids[0];render();const e=document.querySelector(`.blk[data-id="${sel}"]`);if(e){e.scrollIntoView({block:"nearest",inline:"center"});e.focus({preventScroll:true})}};ul.appendChild(li)});
-  el.innerHTML="";el.appendChild(ul);
+  out.sort((a,b)=>(a.t==="e"?0:1)-(b.t==="e"?0:1)).forEach(i=>{const li=document.createElement("li");if(i.t==="w")li.className="w";li.textContent=i.msg;li.onclick=()=>{sel=i.ids[0];render();const e=document.querySelector(`.blk[data-id="${CSS.escape(sel)}"]`);if(e){e.scrollIntoView({block:"nearest",inline:"center"});e.focus({preventScroll:true})}};ul.appendChild(li)});
+  el.appendChild(ul);
 }
 
 function renderLeaders(){
   const d=D(),el=$("leaders");el.innerHTML="";
+  if(RO()){d.leaders.forEach(l=>{const bs=d.blocks.filter(b=>b.tl===l.id);const r=document.createElement("div");r.className="lr";
+    r.innerHTML=`<span class="sw" style="width:12px;height:12px;border-radius:3px;background:var(${TLC[l.id]?TLC[l.id][0]:"--none"});flex:0 0 auto"></span><span><b>${esc(l.name)}</b><br><span class="t">${esc(l.role||"")}${bs.length?` · ${m2t(Math.min(...bs.map(b=>b.start)))}–${m2t(Math.max(...bs.map(b=>b.start+b.dur)))}`:""}</span></span>`;el.appendChild(r)});return}
   d.leaders.forEach(l=>{const r=document.createElement("div");r.className="lr";
     r.innerHTML=`<span class="sw" style="width:12px;height:12px;border-radius:3px;background:var(${TLC[l.id][0]});flex:0 0 auto"></span><input aria-label="Namn" style="flex:0 0 32%"><input aria-label="Uppgifter" placeholder="Uppgifter">`;
     const [i,j]=r.querySelectorAll("input");i.value=l.name;j.value=l.role||"";
@@ -444,14 +503,84 @@ $("addPerson").onclick=()=>{snap();const d=D();
 $("addBlock").onclick=()=>{const d=D();if(!d.persons.length)return;snap();const pid=S.mode==="person"?d.persons[0].id:d.persons[0].id;const b={id:nid(),pid,name:"Nytt moment",start:R[0]+30,dur:15,tl:"",station:"",fast:false};d.blocks.push(b);sel=b.id;save();render();focusSel()};
 
 const dlg=$("dlg");
-$("exportBtn").onclick=()=>{$("dlgTitle").textContent="Exportera data";$("dlgText").textContent="Kopiera texten och spara den, eller skicka den till en kollega som kan importera den.";$("dlgArea").value=JSON.stringify({version:1,days:S.days,deadline:S.deadline},null,1);$("dlgArea").readOnly=true;$("dlgOk").textContent="Kopiera";dlg.dataset.mode="export";dlg.showModal()};
-$("importBtn").onclick=()=>{$("dlgTitle").textContent="Importera data";$("dlgText").textContent="Klistra in exporterad text. Den ersätter schemat för båda dagarna.";$("dlgArea").value="";$("dlgArea").readOnly=false;$("dlgOk").textContent="Importera";dlg.dataset.mode="import";dlg.showModal()};
-$("dlgOk").onclick=async e=>{
-  if(dlg.dataset.mode==="export"){e.preventDefault();try{await navigator.clipboard.writeText($("dlgArea").value);toast("Kopierat")}catch(err){$("dlgArea").select();toast("Markerat – kopiera med Ctrl+C")}return}
-  try{const o=JSON.parse($("dlgArea").value);if(!o.days||!o.days.d1||!o.days.d2)throw 0;snap();S.days=o.days;if(o.deadline)S.deadline=o.deadline;sel=null;save();R=range();render();toast("Schemat importerat")}catch(err){e.preventDefault();toast("Texten kunde inte läsas – kontrollera att hela exporten kom med")}
+/* ---------- Spara som bild ---------- */
+$("pngBtn").onclick=()=>{
+  const cs=getComputedStyle(document.documentElement),V=n=>cs.getPropertyValue(n).trim()||"#ccc";
+  const d=D(),[lo,hi]=R,ppm=Math.max(3,Math.min(S.zoom,5)),lw=LABW()+40,rs=rows(),{bad}=conflicts();
+  const LH=46,hdr=110,axisH=32,sc=2;
+  const lay=rs.map(r=>{const mine=d.blocks.filter(b=>rowOf(b)===r.key).sort((a,c)=>a.start-c.start),ends=[],pos=[];
+    mine.forEach(b=>{let ln=ends.findIndex(e=>e<=b.start);if(ln<0){ln=ends.length;ends.push(0)}ends[ln]=b.start+b.dur;pos.push([b,ln])});return{r,pos,h:Math.max(1,ends.length)*LH+10}});
+  const W=lw+(hi-lo)*ppm+20,H=hdr+axisH+lay.reduce((a,x)=>a+x.h,0)+60;
+  const c=document.createElement("canvas");c.width=W*sc;c.height=H*sc;const g=c.getContext("2d");g.scale(sc,sc);
+  const font=w=>`${w} %SIZE%px "Atkinson Hyperlegible",system-ui,sans-serif`;const F=(w,z)=>font(w).replace("%SIZE%",z);
+  g.fillStyle=V("--bg");g.fillRect(0,0,W,H);
+  const dayName=S.day==="all"?"Båda dagarna":S.day==="d1"?"Dag 1 – labbtester":"Dag 2 – fysiologiska tester";
+  const modeName=S.mode==="person"?"per testperson":S.mode==="leader"?"per testledare":"per lokal";
+  g.fillStyle=V("--brand");g.font=F("700",26);g.fillText("BROCOLD – testschema",20,40);
+  g.fillStyle=V("--ink");g.font=F("400",17);g.fillText(`${dayName}, ${modeName}`,20,68);
+  g.fillStyle=V("--muted");g.font=F("400",13);
+  const legend=d.leaders.map(l=>l.name).join(", ")+"   ·   Lokal: "+LOK.map(l=>l.id).join(", ")+"   ·   Utskrivet "+new Date().toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"});
+  g.fillText(legend,20,92);
+  let x0=lw,y=hdr;
+  g.fillStyle=V("--panel");g.fillRect(0,y,W,axisH);g.fillStyle=V("--muted");g.font=F("400",13);
+  for(let t=Math.ceil(lo/30)*30;t<=hi;t+=30){const x=x0+(t-lo)*ppm;g.fillText(m2t(t),x-17,y+21)}
+  y+=axisH;
+  const rr=(x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()};
+  lay.forEach(({r,pos,h})=>{
+    g.fillStyle=V("--board");g.fillRect(x0,y,W-x0,h);g.fillStyle=V("--panel");g.fillRect(0,y,x0,h);
+    g.strokeStyle=V("--line");g.lineWidth=1;
+    for(let t=Math.ceil(lo/30)*30;t<=hi;t+=30){const x=x0+(t-lo)*ppm;g.beginPath();g.moveTo(x+.5,y);g.lineTo(x+.5,y+h);g.stroke()}
+    g.beginPath();g.moveTo(0,y+h-.5);g.lineTo(W,y+h-.5);g.lineWidth=(r.day==="d2")?3:1;g.stroke();g.lineWidth=1;
+    let lab=r.label;if(r.kind==="leader"&&r.key){const l=d.leaders.find(z=>z.id===r.key);lab=l?l.name:lab}
+    if(r.kind==="ro"&&S.mode!=="person")lab+=r.day==="d1"?" – Dag 1":" – Dag 2";
+    g.fillStyle=V("--ink");g.font=F("700",15);g.fillText(lab,12,y+h/2+5);
+    pos.forEach(([b,ln])=>{const bx=x0+(b.start-lo)*ppm,bw=Math.max(6,b.dur*ppm-2),by=y+6+ln*LH,bh=LH-6;
+      const col=b.tl&&TLC[b.tl]?[V(TLC[b.tl][0]),V(TLC[b.tl][1])]:[V("--none"),V("--nonei")];
+      rr(bx,by,bw,bh,5);g.fillStyle=col[0];g.fill();if(!b.tl){g.strokeStyle=V("--muted");g.setLineDash([3,3]);g.stroke();g.setLineDash([])}
+      if(bad.has(b.id)){g.setLineDash([4,3]);g.strokeStyle=V("--danger");g.lineWidth=1.5;g.stroke();g.setLineDash([]);g.lineWidth=1}
+      if(b.lokal&&lokC(b.lokal)){const lc=LOK.find(o=>o.id===b.lokal);g.fillStyle=V(lc.c);g.fillRect(bx+2,by+bh-5,bw-4,4)}
+      g.save();g.beginPath();g.rect(bx+4,by,bw-8,bh);g.clip();g.fillStyle=col[1];
+      const pn=(d.persons.find(p=>p.id===b.pid)||{}).name||"";
+      const nm=S.mode==="person"?b.name:`${RO()?pn.replace(/^Dag \d /,""):pn} ${b.name}`;
+      g.font=F("700",12.5);g.fillText(nm,bx+6,by+16);g.font=F("400",11.5);
+      g.fillText(`${m2t(b.start)}–${m2t(b.start+b.dur)}${b.tl&&S.mode!=="leader"?" · "+lname(b.tl):""}${b.lokal&&S.mode!=="lokal"?" · "+b.lokal:""}`,bx+6,by+31);g.restore()});
+    y+=h});
+  c.toBlob(bl=>{const a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download=`BROCOLD_${S.day==="all"?"bada-dagarna":S.day==="d1"?"dag1":"dag2"}_${S.mode}.png`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);toast("Bilden sparad")},"image/png");
 };
 
+/* ---------- Google Sheets ---------- */
+const SHEET_URL_DEFAULT="https://script.google.com/macros/s/AKfycbwiLVKKOIcFO9fMnpUUCR_nCrSZ2hr-l6mFzrrjoIss1kJHxheosMDCFwVM0g5mFCOn3A/exec";   // klistra in webbapp-adressen här om alla ska kopplas automatiskt
+const SHEET_TOKEN_DEFAULT=""; // samma kod som TOKEN i Apps Script
+const cfg=()=>{let c={};try{c=JSON.parse(localStorage.getItem("brocold-sheet")||"{}")}catch(e){}return{url:c.url||SHEET_URL_DEFAULT,token:c.token||SHEET_TOKEN_DEFAULT}};
+const setStat=(t,err)=>{const e=$("syncStat");e.textContent=t;e.style.color=err?"var(--danger)":"var(--muted)"};
+let lastPushed=null,pushT=null,pulling=false;
+const payload=()=>JSON.stringify({days:S.days,deadline:S.deadline});
+function schedulePush(){const c=cfg();if(!c.url||pulling)return;const p=payload();if(p===lastPushed)return;
+  setStat("Sparar till kalkylarket …");clearTimeout(pushT);pushT=setTimeout(()=>push(p),1200)}
+async function push(p){const c=cfg();
+  try{const r=await fetch(c.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({token:c.token,data:JSON.parse(p)})});
+    const j=await r.json();if(!j.ok)throw new Error(j.error||"fel");lastPushed=p;setStat("Sparat i kalkylarket "+new Date().toLocaleTimeString("sv-SE",{hour:"2-digit",minute:"2-digit"}))}
+  catch(e){setStat("Kunde inte spara till kalkylarket – ändringen finns kvar lokalt",true)}}
+async function pull(showToast){const c=cfg();if(!c.url){setStat("Kalkylark: inte kopplat");return}
+  setStat("Hämtar från kalkylarket …");
+  try{const r=await fetch(c.url+(c.url.includes("?")?"&":"?")+"token="+encodeURIComponent(c.token));const j=await r.json();
+    if(!j.ok)throw new Error(j.error||"fel");
+    if(j.data&&j.data.days&&j.data.days.d1){pulling=true;S.days=j.data.days;if(j.data.deadline)S.deadline=j.data.deadline;
+      S.days.d1.blocks.concat(S.days.d2.blocks).forEach(b=>{if(b.lokal===undefined)b.lokal=""});
+      lastPushed=payload();sel=null;save();R=range();render();pulling=false;
+      setStat("Hämtat från kalkylarket "+(j.updated?new Date(j.updated).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"}):""));if(showToast)toast("Schemat hämtat från kalkylarket")}
+    else{setStat("Kalkylarket är tomt – sparar nuvarande schema");lastPushed=null;schedulePush()}}
+  catch(e){pulling=false;setStat(j_err(e),true)}}
+const j_err=e=>/token/.test(String(e))?"Fel kod (TOKEN) för kalkylarket":"Kunde inte nå kalkylarket – arbetar lokalt";
+$("sheetBtn").onclick=()=>{const c=cfg();$("sUrl").value=c.url;$("sTok").value=c.token;dlg.showModal()};
+$("sSave").onclick=()=>{const url=$("sUrl").value.trim(),token=$("sTok").value.trim();
+  if(!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){toast("Adressen ska börja med https://script.google.com/");return}
+  try{localStorage.setItem("brocold-sheet",JSON.stringify({url,token}))}catch(e){}dlg.close();pull(true)};
+$("sPull").onclick=()=>{dlg.close();pull(true)};
+$("sOff").onclick=()=>{try{localStorage.removeItem("brocold-sheet")}catch(e){}dlg.close();setStat("Kalkylark: inte kopplat");toast("Bortkopplad från kalkylarket")};
+
 render();
+pull(false);
 })();
 </script>
 </body>
