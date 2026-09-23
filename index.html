@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --lk-alabb:#D9822B;--lk-bmc:#7B4FB8;--lk-ltiv:#1F7A8C;
+  --lk-alabb:#D9822B;--lk-bmc:#7B4FB8;--lk-ltiv:#1F7A8C;--lk-dxa:#C23B6E;--board:#ECEFEC;
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
   --bg:#F7F9F7;--panel:#FFFFFF;--ink:#17231C;--muted:#5B6A61;--line:#DCE3DE;--grid:#EDF1EE;
   --brand:#1E5A3C;--brand-soft:#E3EFE7;--danger:#B3261E;--danger-soft:#FBE9E7;--warn:#8A5A00;--warn-soft:#FFF3D6;
@@ -20,12 +20,12 @@
   --bg:#121815;--panel:#1A221E;--ink:#E7EEE9;--muted:#9AAAA0;--line:#2E3A33;--grid:#212B26;
   --brand:#7FC79C;--brand-soft:#1F3328;--danger:#FF8A80;--danger-soft:#3A1F1C;--warn:#F2C35B;--warn-soft:#3A2F16;
   --tl1:#1B4A42;--tl1i:#BFEFE2;--tl2:#1E3A5C;--tl2i:#CFE3FA;--tl3:#34461B;--tl3i:#DDEDB8;--tl4:#3E2B4B;--tl4i:#EBD9F5;
-  --none:#26302B;--nonei:#B4C0B8;--sel:#FFFFFF;}}
+  --none:#26302B;--nonei:#B4C0B8;--sel:#FFFFFF;--board:#1F2723;}}
 :root[data-theme="dark"]{
   --bg:#121815;--panel:#1A221E;--ink:#E7EEE9;--muted:#9AAAA0;--line:#2E3A33;--grid:#212B26;
   --brand:#7FC79C;--brand-soft:#1F3328;--danger:#FF8A80;--danger-soft:#3A1F1C;--warn:#F2C35B;--warn-soft:#3A2F16;
   --tl1:#1B4A42;--tl1i:#BFEFE2;--tl2:#1E3A5C;--tl2i:#CFE3FA;--tl3:#34461B;--tl3i:#DDEDB8;--tl4:#3E2B4B;--tl4i:#EBD9F5;
-  --none:#26302B;--nonei:#B4C0B8;--sel:#FFFFFF;}
+  --none:#26302B;--nonei:#B4C0B8;--sel:#FFFFFF;--board:#1F2723;}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:18px;line-height:1.45;font-variant-numeric:tabular-nums}
 button,input,select{font:inherit;color:inherit}
@@ -51,14 +51,14 @@ h1{font-size:1.9rem;margin:0;color:var(--brand);letter-spacing:-.01em}
 .stat .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:0}
 .main{display:flex;flex-direction:column;gap:16px}
 @media (max-width:900px){aside{grid-template-columns:minmax(0,1fr)!important}}
-.board{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.board{background:var(--board);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .scroll{overflow:auto;position:relative;max-height:calc(100vh - 200px)}
 .grid{position:relative}
 .axis{display:flex;position:sticky;top:0;z-index:3;background:var(--panel);border-bottom:1px solid var(--line)}
 .corner{position:sticky;left:0;z-index:4;background:var(--panel);flex:0 0 auto;border-right:1px solid var(--line)}
 .ticks{position:relative;height:38px}
 .ticks span{position:absolute;top:8px;transform:translateX(-50%);font-size:.95rem;color:var(--muted);white-space:nowrap}
-.row{display:flex;border-bottom:1px solid var(--grid)}
+.row{display:flex;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
 .lab{position:sticky;left:0;z-index:2;background:var(--panel);flex:0 0 auto;border-right:1px solid var(--line);padding:6px 8px;display:flex;align-items:center;gap:6px}
 .lab input{width:100%;border:1px solid transparent;background:transparent;border-radius:5px;padding:3px 5px;font-weight:700}
@@ -66,7 +66,7 @@ h1{font-size:1.9rem;margin:0;color:var(--brand);letter-spacing:-.01em}
 .lab .x{border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:4px}
 .lab .x:hover{color:var(--danger)}
 .lab .sw{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
-.track{position:relative;height:74px;background-image:linear-gradient(to right,var(--grid) 1px,transparent 1px)}
+.track{position:relative;height:74px;background-color:var(--board);background-image:linear-gradient(to right,var(--grid) 1px,transparent 1px)}
 .row.drop .track{background-color:var(--brand-soft)}
 .blk{position:absolute;border-radius:6px;padding:4px 8px;font-size:1rem;line-height:1.25;overflow:hidden;cursor:grab;user-select:none;touch-action:none;border:1.5px solid transparent;display:flex;flex-direction:column;justify-content:center}
 .blk .n{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -175,12 +175,16 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
 "use strict";
 const KEY="brocold-schema-v1";
 const TLC={TL1:["--tl1","--tl1i"],TL2:["--tl2","--tl2i"],TL3:["--tl3","--tl3i"],TL4:["--tl4","--tl4i"]};
-const LOK=[{id:"Ålabb",c:"--lk-alabb"},{id:"BMC",c:"--lk-bmc"},{id:"LTIV",c:"--lk-ltiv"}];
+const LOK=[{id:"Ålabb",c:"--lk-alabb"},{id:"BMC",c:"--lk-bmc"},{id:"LTIV",c:"--lk-ltiv"},{id:"DXA-rum",c:"--lk-dxa"}];
 const lokC=l=>{const x=LOK.find(o=>o.id===l);return x?`var(${x.c})`:""};
 const t2m=t=>{const[h,m]=t.split(":").map(Number);return h*60+m};
 const m2t=m=>{m=Math.max(0,Math.min(1439,Math.round(m)));return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0")};
 let uid=0;const nid=()=>"b"+(Date.now().toString(36))+(uid++).toString(36);
 
+function applyLok(days){
+  days.d1.blocks.forEach(b=>{if(/biopsi|blod|antro/i.test(b.name))b.lokal="Ålabb";else if(/dexa|dxa/i.test(b.name))b.lokal="DXA-rum"});
+  days.d2.blocks.forEach(b=>b.lokal="LTIV");
+}
 function defaults(){
   const d1raw={
     P1:[["Info","07:00",15,"TL2"],["Antro/BT","07:15",20,"TL2"],["Blodprov","07:35",30,"TL1","",1],["DEXA","08:10",15,"TL2","DEXA",1],["Biopsi","08:40",20,"TL1","Biopsi",1],["Frukost + enkät","09:00",30,""],["CGM + WHOOP","09:30",25,"TL3"],["Kognition","09:55",30,"TL3"],["Ultraljud","11:00",20,"TL1","Ultraljud"],["Cybex","11:20",20,"TL3","Cybex"],["Avslut","11:40",10,"TL3"]],
@@ -194,9 +198,10 @@ function defaults(){
   const persons=["P1","P2","P3","P4"].map(n=>({id:"p"+n,name:n}));
   const d1={persons:JSON.parse(JSON.stringify(persons)),leaders:[{id:"TL1",name:"Filip",role:"blod, biopsi, ultraljud"},{id:"TL2",name:"Manne",role:"info, antro, DEXA"},{id:"TL3",name:"Eva",role:"block 2"}],blocks:[]};
   for(const p of Object.keys(d1raw))for(const r of d1raw[p])d1.blocks.push(mk("p"+p,r,t2m(r[1])));
-  const d2={persons:JSON.parse(JSON.stringify(persons)),leaders:[{id:"TL1",name:"Filip",role:"funktionstester"},{id:"TL2",name:"Manne",role:"aerob och VO₂max"}],blocks:[]};
+  const d2={persons:JSON.parse(JSON.stringify(persons)),leaders:[{id:"TL1",name:"Eva",role:"funktionstester"},{id:"TL2",name:"Manne",role:"aerob och VO₂max"}],blocks:[]};
   for(const p of Object.keys(d2starts))for(const r of d2tpl)d2.blocks.push(mk("p"+p,r,t2m(d2starts[p])+r[1]));
-  return {days:{d1,d2},deadline:t2m("10:00"),day:"d1",mode:"person",zoom:5.2};
+  applyLok({d1,d2});
+  return {days:{d1,d2},deadline:t2m("10:00"),day:"d1",mode:"person",zoom:5.2,mig2:true};
 }
 
 let S;try{const raw=localStorage.getItem(KEY);S=raw?JSON.parse(raw):null}catch(e){S=null}
@@ -204,7 +209,8 @@ if(!S||!S.days||!S.days.d1)S=defaults();
 (function migrate(){const NM={TL1:"Filip",TL2:"Manne",TL3:"Eva"};
   for(const k of Object.keys(S.days)){const d=S.days[k];
     d.leaders.forEach(l=>{if(l.role===undefined){const parts=String(l.name||"").split(" – ");l.role=parts[1]||"";l.name=/^TL\d/.test(parts[0])?(NM[l.id]||parts[0]):parts[0]}});
-    d.blocks.forEach(b=>{if(b.lokal===undefined)b.lokal=""})}})();
+    d.blocks.forEach(b=>{if(b.lokal===undefined)b.lokal=""})}
+  if(!S.mig2){applyLok(S.days);const l=S.days.d2&&S.days.d2.leaders.find(x=>x.id==="TL1");if(l&&(l.name==="Filip"||/^TL/.test(l.name)))l.name="Eva";S.mig2=true}})();
 let sel=null;const undoStack=[];
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const snap=()=>{undoStack.push(JSON.stringify(S.days));if(undoStack.length>60)undoStack.shift();$("undo").disabled=false};
