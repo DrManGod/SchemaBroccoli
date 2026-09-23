@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Kamprad 2026 – testschema</title>
+<title>BROCOLD – testschema</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
@@ -26,11 +26,11 @@
   --tl1:#1B4A42;--tl1i:#BFEFE2;--tl2:#1E3A5C;--tl2i:#CFE3FA;--tl3:#34461B;--tl3i:#DDEDB8;--tl4:#3E2B4B;--tl4i:#EBD9F5;
   --none:#26302B;--nonei:#B4C0B8;--sel:#FFFFFF;}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:18px;line-height:1.45;font-variant-numeric:tabular-nums}
 button,input,select{font:inherit;color:inherit}
-.wrap{max-width:1400px;margin:0 auto;padding:20px 20px 40px}
+.wrap{max-width:none;margin:0 auto;padding:20px 24px 40px}
 header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:16px}
-h1{font-size:1.6rem;margin:0;color:var(--brand);letter-spacing:-.01em}
+h1{font-size:1.9rem;margin:0;color:var(--brand);letter-spacing:-.01em}
 .sub{color:var(--muted);margin:2px 0 0}
 .tools{display:flex;flex-wrap:wrap;gap:8px}
 .btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;cursor:pointer}
@@ -42,21 +42,21 @@ h1{font-size:1.6rem;margin:0;color:var(--brand);letter-spacing:-.01em}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}
 .seg button{border:0;background:none;padding:7px 14px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--brand);color:var(--bg)}
-.field{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.9rem}
+.field{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:1rem}
 .field input,.field select{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:4px 6px;color:var(--ink)}
 .stats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
-.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:.9rem}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 14px;font-size:1rem}
 .stat b{font-size:1.05rem}
 .stat .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:0}
-.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
-@media (max-width:980px){.main{grid-template-columns:minmax(0,1fr)}}
+.main{display:flex;flex-direction:column;gap:16px}
+@media (max-width:900px){aside{grid-template-columns:minmax(0,1fr)!important}}
 .board{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.scroll{overflow-x:auto;position:relative}
+.scroll{overflow:auto;position:relative;max-height:calc(100vh - 200px)}
 .grid{position:relative}
 .axis{display:flex;position:sticky;top:0;z-index:3;background:var(--panel);border-bottom:1px solid var(--line)}
 .corner{position:sticky;left:0;z-index:4;background:var(--panel);flex:0 0 auto;border-right:1px solid var(--line)}
-.ticks{position:relative;height:30px}
-.ticks span{position:absolute;top:7px;transform:translateX(-50%);font-size:.8rem;color:var(--muted);white-space:nowrap}
+.ticks{position:relative;height:38px}
+.ticks span{position:absolute;top:8px;transform:translateX(-50%);font-size:.95rem;color:var(--muted);white-space:nowrap}
 .row{display:flex;border-bottom:1px solid var(--grid)}
 .row:last-child{border-bottom:0}
 .lab{position:sticky;left:0;z-index:2;background:var(--panel);flex:0 0 auto;border-right:1px solid var(--line);padding:6px 8px;display:flex;align-items:center;gap:6px}
@@ -65,36 +65,36 @@ h1{font-size:1.6rem;margin:0;color:var(--brand);letter-spacing:-.01em}
 .lab .x{border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:4px}
 .lab .x:hover{color:var(--danger)}
 .lab .sw{width:10px;height:10px;border-radius:3px;flex:0 0 auto}
-.track{position:relative;height:54px;background-image:linear-gradient(to right,var(--grid) 1px,transparent 1px)}
+.track{position:relative;height:74px;background-image:linear-gradient(to right,var(--grid) 1px,transparent 1px)}
 .row.drop .track{background-color:var(--brand-soft)}
-.blk{position:absolute;border-radius:6px;padding:3px 6px;font-size:.78rem;line-height:1.2;overflow:hidden;cursor:grab;user-select:none;touch-action:none;border:1.5px solid transparent;display:flex;flex-direction:column;justify-content:center}
+.blk{position:absolute;border-radius:6px;padding:4px 8px;font-size:1rem;line-height:1.25;overflow:hidden;cursor:grab;user-select:none;touch-action:none;border:1.5px solid transparent;display:flex;flex-direction:column;justify-content:center}
 .blk .n{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.blk .m{font-size:.72rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85}
+.blk .m{font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85}
 .blk.none{background:repeating-linear-gradient(135deg,var(--none) 0 6px,transparent 6px 10px),var(--panel);color:var(--nonei);border-color:var(--line)}
 .blk.fast::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:currentColor;opacity:.55}
 .blk.sel{border-color:var(--sel);box-shadow:0 0 0 2px var(--sel) inset}
 .blk.bad{border-color:var(--danger);border-style:dashed}
 .blk.bad .n::after{content:" !";color:var(--danger)}
 .blk.dragging{cursor:grabbing;opacity:.9;z-index:5;box-shadow:0 6px 18px rgba(0,0,0,.18)}
-.blk .h{position:absolute;right:0;top:0;bottom:0;width:9px;cursor:ew-resize}
+.blk .h{position:absolute;right:0;top:0;bottom:0;width:12px;cursor:ew-resize}
 .blk .h::after{content:"";position:absolute;right:3px;top:30%;bottom:30%;width:2px;border-radius:2px;background:currentColor;opacity:.35}
 .deadline{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--danger);opacity:.6;pointer-events:none;z-index:1}
 .boardfoot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
-.hint{color:var(--muted);font-size:.85rem;margin-left:auto}
-aside{display:flex;flex-direction:column;gap:14px}
+.hint{color:var(--muted);font-size:.95rem;margin-left:auto}
+aside{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
-.card h2{font-size:1rem;margin:0 0 10px}
-.form{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;font-size:.9rem}
+.card h2{font-size:1.15rem;margin:0 0 10px}
+.form{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;align-items:center;font-size:1rem}
 .form label{color:var(--muted)}
 .form input[type=text],.form input[type=time],.form input[type=number],.form select{width:100%;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:5px 7px}
 .form .full{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .empty{color:var(--muted);font-size:.9rem;margin:0}
-.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:auto}
-.issues li{font-size:.85rem;padding:6px 8px;border-radius:6px;background:var(--danger-soft);color:var(--danger);cursor:pointer}
+.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:360px;overflow:auto}
+.issues li{font-size:.95rem;padding:6px 8px;border-radius:6px;background:var(--danger-soft);color:var(--danger);cursor:pointer}
 .issues li.w{background:var(--warn-soft);color:var(--warn)}
 .ok{color:var(--brand);font-size:.9rem;margin:0}
 .leaders{display:flex;flex-direction:column;gap:6px}
-.leaders .lr{display:flex;align-items:center;gap:8px;font-size:.88rem}
+.leaders .lr{display:flex;align-items:center;gap:8px;font-size:1rem}
 .leaders input{flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:4px 6px}
 .leaders .t{color:var(--muted);white-space:nowrap}
 dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);max-width:min(640px,92vw);width:100%}
@@ -108,7 +108,7 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
 <div class="wrap">
   <header>
     <div>
-      <h1>Kamprad 2026 – testschema</h1>
+      <h1>BROCOLD – testschema</h1>
       <p class="sub">Dra ett moment för att flytta det, dra i högerkanten för att ändra längd. Klicka för att redigera.</p>
     </div>
     <div class="tools">
@@ -128,7 +128,7 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
       <button data-mode="person">Per testperson</button>
       <button data-mode="leader">Per testledare</button>
     </div>
-    <label class="field">Zoom <input type="range" id="zoom" min="1.4" max="5" step="0.2"></label>
+    <label class="field">Zoom <input type="range" id="zoom" min="2" max="8" step="0.2"></label>
     <label class="field" id="dlField">Sista start för blodprov <input type="time" id="deadline" step="300"></label>
   </div>
 
@@ -167,7 +167,7 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
 <script>
 (function(){
 "use strict";
-const KEY="kamprad2026-schema-v1";
+const KEY="brocold-schema-v1";
 const TLC={TL1:["--tl1","--tl1i"],TL2:["--tl2","--tl2i"],TL3:["--tl3","--tl3i"],TL4:["--tl4","--tl4i"]};
 const t2m=t=>{const[h,m]=t.split(":").map(Number);return h*60+m};
 const m2t=m=>{m=Math.max(0,Math.min(1439,Math.round(m)));return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0")};
@@ -188,7 +188,7 @@ function defaults(){
   for(const p of Object.keys(d1raw))for(const r of d1raw[p])d1.blocks.push(mk("p"+p,r,t2m(r[1])));
   const d2={persons:JSON.parse(JSON.stringify(persons)),leaders:[{id:"TL1",name:"TL1 – funktionstester"},{id:"TL2",name:"TL2 – aerob och VO₂max"}],blocks:[]};
   for(const p of Object.keys(d2starts))for(const r of d2tpl)d2.blocks.push(mk("p"+p,r,t2m(d2starts[p])+r[1]));
-  return {days:{d1,d2},deadline:t2m("10:00"),day:"d1",mode:"person",zoom:3.4};
+  return {days:{d1,d2},deadline:t2m("10:00"),day:"d1",mode:"person",zoom:5.2};
 }
 
 let S;try{const raw=localStorage.getItem(KEY);S=raw?JSON.parse(raw):null}catch(e){S=null}
@@ -198,8 +198,8 @@ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const snap=()=>{undoStack.push(JSON.stringify(S.days));if(undoStack.length>60)undoStack.shift();$("undo").disabled=false};
 const $=id=>document.getElementById(id);
 const D=()=>S.days[S.day];
-const toast=msg=>{const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("on"),1800)};
-const LABW=()=>S.mode==="person"?110:190;
+const toast=msg=>{const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("on"),2600)};
+const LABW=()=>S.mode==="person"?130:230;
 
 function range(){
   const b=D().blocks;if(!b.length)return[420,960];
@@ -260,18 +260,20 @@ function render(){
       const inp=document.createElement("input");inp.value=r.label;inp.setAttribute("aria-label","Namn på testperson");
       inp.onchange=()=>{snap();d.persons.find(p=>p.id===r.key).name=inp.value||"?";save();render()};
       const x=document.createElement("button");x.className="x";x.textContent="✕";x.title="Ta bort testperson";
-      x.onclick=()=>{if(!confirm(`Ta bort ${r.label} och alla moment?`))return;snap();d.persons=d.persons.filter(p=>p.id!==r.key);d.blocks=d.blocks.filter(b=>b.pid!==r.key);save();R=range();render()};
+      if(d.persons.length<=1){x.disabled=true;x.style.visibility="hidden";x.title="Minst en testperson"}
+      x.setAttribute("aria-label",`Ta bort ${r.label}`);
+      x.onclick=()=>{if(d.persons.length<=1)return;snap();d.persons=d.persons.filter(p=>p.id!==r.key);d.blocks=d.blocks.filter(b=>b.pid!==r.key);if(sel&&!d.blocks.some(b=>b.id===sel))sel=null;save();R=range();render();toast(`${r.label} borttagen – tryck Ångra för att få tillbaka`)};
       lab.append(inp,x);
     }else{
       if(r.key){const sw=document.createElement("span");sw.className="sw";sw.style.background=`var(${TLC[r.key]?TLC[r.key][0]:"--none"})`;lab.appendChild(sw)}
-      const s=document.createElement("span");s.textContent=r.key?((d.leaders.find(l=>l.id===r.key)||{}).name||r.key):r.label;s.style.fontWeight="700";s.style.fontSize=".85rem";lab.appendChild(s);
+      const s=document.createElement("span");s.textContent=r.key?((d.leaders.find(l=>l.id===r.key)||{}).name||r.key):r.label;s.style.fontWeight="700";s.style.fontSize="1rem";lab.appendChild(s);
     }
     const tr=document.createElement("div");tr.className="track";tr.style.width=W+"px";tr.style.backgroundSize=`${bgSize}px 100%`;tr.style.backgroundPosition=`${((Math.ceil(lo/30)*30-lo)*ppm)}px 0`;
     if(S.day==="d1"&&S.deadline>lo&&S.deadline<hi){const dl=document.createElement("div");dl.className="deadline";dl.style.left=((S.deadline-lo)*ppm)+"px";dl.title="Sista start för blodprov";tr.appendChild(dl)}
     const mine=d.blocks.filter(b=>rowOf(b)===r.key).sort((a,c)=>a.start-c.start||a.dur-c.dur),ends=[];
     mine.forEach(b=>{let ln=ends.findIndex(e=>e<=b.start);if(ln<0){ln=ends.length;ends.push(0)}ends[ln]=b.start+b.dur;
-      const e=blockEl(b,bad.has(b.id),lo,ppm);e.style.top=(5+ln*46)+"px";e.style.bottom="auto";e.style.height="44px";tr.appendChild(e)});
-    tr.style.height=(Math.max(1,ends.length)*46+8)+"px";
+      const e=blockEl(b,bad.has(b.id),lo,ppm);e.style.top=(6+ln*64)+"px";e.style.bottom="auto";e.style.height="60px";tr.appendChild(e)});
+    tr.style.height=(Math.max(1,ends.length)*64+10)+"px";
     row.append(lab,tr);g.appendChild(row);
   });
   renderStats();renderEditor();renderIssues(out);renderLeaders();
@@ -398,10 +400,16 @@ $("deadline").onchange=e=>{if(e.target.value){S.deadline=t2m(e.target.value);sav
 $("undo").onclick=()=>{if(!undoStack.length)return;S.days=JSON.parse(undoStack.pop());save();R=range();render();toast("Ångrat")};
 document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){e.preventDefault();$("undo").click()}});
 $("resetBtn").onclick=()=>{if(!confirm("Återställ båda dagarna till det ursprungliga förslaget? Dina ändringar försvinner."))return;snap();const z=S.zoom,day=S.day,mode=S.mode;S=defaults();S.zoom=z;S.day=day;S.mode=mode;sel=null;save();R=range();render();toast("Förslaget återställt")};
-$("addPerson").onclick=()=>{snap();const d=D(),n=d.persons.length+1,id="p"+nid();d.persons.push({id,name:"P"+n});
-  const tpl=d.persons[0]&&d.blocks.filter(b=>b.pid===d.persons[0].id);
-  if(tpl&&tpl.length){const last=Math.max(...d.blocks.map(b=>b.start+b.dur)),first=Math.min(...tpl.map(b=>b.start));tpl.forEach(b=>d.blocks.push({...b,id:nid(),pid:id,start:b.start-first+Math.ceil(last/5)*5}))}
-  save();R=range();render();toast(`P${n} tillagd efter sista momentet`)};
+$("addPerson").onclick=()=>{snap();const d=D();
+  const nums=d.persons.map(p=>+((p.name.match(/^P(\d+)$/)||[])[1]||0));const n=Math.max(0,...nums)+1,id="p"+nid(),name="P"+n;
+  const firstOf=pid=>{const bs=d.blocks.filter(b=>b.pid===pid);return bs.length?Math.min(...bs.map(b=>b.start)):null};
+  const withBlocks=d.persons.filter(p=>firstOf(p.id)!==null).sort((a,c)=>firstOf(a.id)-firstOf(c.id));
+  d.persons.push({id,name});
+  if(withBlocks.length){const last=withBlocks[withBlocks.length-1],prev=withBlocks[withBlocks.length-2];
+    const step=prev?Math.max(5,firstOf(last.id)-firstOf(prev.id)):40;
+    d.blocks.filter(b=>b.pid===last.id).forEach(b=>d.blocks.push({...b,id:nid(),pid:id,start:b.start+step}));
+    save();R=range();render();toast(`${name} tillagd, ${step} min efter ${last.name}`)}
+  else{save();R=range();render();toast(`${name} tillagd`)}};
 $("addBlock").onclick=()=>{const d=D();if(!d.persons.length)return;snap();const pid=S.mode==="person"?d.persons[0].id:d.persons[0].id;const b={id:nid(),pid,name:"Nytt moment",start:R[0]+30,dur:15,tl:"",station:"",fast:false};d.blocks.push(b);sel=b.id;save();render();focusSel()};
 
 const dlg=$("dlg");
