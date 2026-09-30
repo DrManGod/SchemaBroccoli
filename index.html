@@ -97,22 +97,31 @@ aside.calside{display:flex;flex-direction:column;gap:16px;grid-template-columns:
 .wn{border:0;background:none;color:var(--muted);font:inherit;font-size:.85rem;cursor:pointer;align-self:start;padding:8px 0;border-radius:6px}
 .wn:hover{color:var(--brand);background:var(--panel)}
 .cday{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 7px;min-height:118px;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-width:0}
-.calgrid.week .cday{min-height:300px}
+.calgrid.week .cday{min-height:520px}
 .cday:hover{border-color:var(--brand)}
 .cday:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .cday.on{border-color:var(--brand);box-shadow:0 0 0 2px var(--brand) inset}
 .cday.we{background:color-mix(in srgb,var(--panel) 80%,var(--muted) 20%)}
 .cday.other{opacity:.55}
 .cday.off{opacity:.35;cursor:default}
-.cday.full .cnt{color:var(--danger);font-weight:700}
-.ch{display:flex;justify-content:space-between;align-items:baseline}
+.cnt .fl{font-weight:700;box-shadow:inset 0 0 0 1.5px var(--danger)}
+.cday.full{border-color:var(--danger)}
+.slothead{font-size:.8rem;font-weight:700;margin-top:4px;padding:2px 4px;border-radius:4px}
+.slothead.d1{color:var(--tl1i)}
+.slothead.d2{color:var(--tl2i)}
+.ch{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:3px 6px}
+.cnt{display:flex;gap:4px;flex-wrap:nowrap}
+.cnt span{padding:1px 5px;border-radius:4px;white-space:nowrap;font-size:.75rem}
+.cnt .c1{background:var(--tl1);color:var(--tl1i)}
+.cnt .c2{background:var(--tl2);color:var(--tl2i)}
+.cnt .z{opacity:.55}
 .dn{font-weight:700}
 .cnt{font-size:.8rem;color:var(--muted)}
 .hol{font-size:.75rem;color:var(--danger)}
 .chips{display:flex;flex-direction:column;gap:4px;min-width:0}
 .chip{border-radius:6px;padding:3px 6px;font-size:.8rem;line-height:1.25;display:flex;flex-direction:column;min-width:0;overflow:hidden}
 .chip b,.chip span,.chip i{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.calgrid.week .chip{padding:8px;font-size:.95rem;min-height:74px;justify-content:center}
+.calgrid.week .chip{padding:6px 8px;font-size:.9rem;min-height:62px;justify-content:center}
 .calgrid.week .chip span,.calgrid.week .chip i{white-space:normal}
 aside.calside>.card{width:100%}
 .chip.d1{background:var(--tl1);color:var(--tl1i)}
@@ -215,7 +224,7 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
       <button class="btn" id="calPrev" aria-label="Föregående">‹</button>
       <h2 id="calTitle" style="margin:0;font-size:1.3rem;min-width:14ch"></h2>
       <button class="btn" id="calNext" aria-label="Nästa">›</button>
-      <span class="field">Oktober–december 2026 · upp till 3 testpersoner per dag</span>
+      <span class="field">Oktober–december 2026 · upp till 3 Dag 1 och 3 Dag 2 per dag</span>
     </div>
     <div class="stats" id="calStats"></div>
     <div class="calmain">
@@ -704,7 +713,9 @@ $("sPull").onclick=()=>{dlg.close();pull(true)};
 $("sOff").onclick=()=>{try{localStorage.removeItem("brocold-sheet")}catch(e){}dlg.close();setStat("Kalkylark: inte kopplat");toast("Bortkopplad från kalkylarket")};
 
 /* ================= Kalender och bokning ================= */
-const CAL_FIRST=new Date(2026,9,1),CAL_LAST=new Date(2026,11,31),MAXDAY=3;
+const CAL_FIRST=new Date(2026,9,1),CAL_LAST=new Date(2026,11,31),MAXT=3;
+const nT=(a,t)=>a.filter(b=>b.type===t).length;
+const dayFull=a=>nT(a,"d1")>=MAXT&&nT(a,"d2")>=MAXT;
 const HOLI={"2026-10-31":"Alla helgons dag","2026-12-24":"Julafton","2026-12-25":"Juldagen","2026-12-26":"Annandag jul","2026-12-31":"Nyårsafton"};
 const MON=["januari","februari","mars","april","maj","juni","juli","augusti","september","oktober","november","december"];
 const WD=["Mån","Tis","Ons","Tor","Fre","Lör","Sön"];
@@ -742,8 +753,8 @@ function renderCal(){
   $("calPrev").disabled=c.view==="month"?c.month<=9:fromIso(c.week)<=monday(CAL_FIRST);
   $("calNext").disabled=c.view==="month"?c.month>=11:addD(fromIso(c.week),7)>CAL_LAST;
   const all=allBk(),n1=all.filter(b=>b.type==="d1").length,n2=all.filter(b=>b.type==="d2").length;
-  const ids=new Set(all.map(b=>b.pid)).size,full=Object.values(S.bookings).filter(a=>a.length>=MAXDAY).length;
-  $("calStats").innerHTML=`<div class="stat"><b>${all.length}</b> bokningar okt–dec · Dag 1: <b>${n1}</b> · Dag 2: <b>${n2}</b></div><div class="stat"><b>${ids}</b> unika ID</div><div class="stat"><b>${full}</b> fullbokade dagar</div>`;
+  const ids=new Set(all.map(b=>b.pid)).size,full=Object.values(S.bookings).filter(dayFull).length,f1=Object.values(S.bookings).filter(a=>nT(a,"d1")>=MAXT).length,f2=Object.values(S.bookings).filter(a=>nT(a,"d2")>=MAXT).length;
+  $("calStats").innerHTML=`<div class="stat"><b>${all.length}</b> bokningar okt–dec · Dag 1: <b>${n1}</b> · Dag 2: <b>${n2}</b></div><div class="stat"><b>${ids}</b> unika ID</div><div class="stat">Fullbokat: Dag 1 <b>${f1}</b> dagar · Dag 2 <b>${f2}</b> dagar · båda <b>${full}</b></div>`;
   const g=$("calGrid");g.innerHTML="";g.className="calgrid "+c.view;
   const head=document.createElement("div");head.className="calhead";head.innerHTML=`<span>v.</span>`+WD.map(w=>`<span>${w}</span>`).join("");g.appendChild(head);
   for(let i=0;i<days.length;i+=7){const wk=document.createElement("div");wk.className="calweek";
@@ -754,28 +765,27 @@ function renderCal(){
 }
 function dayCell(d){
   const k=iso(d),c=S.cal,a=S.bookings[k]||[],ok=inRange(d),we=d.getDay()===0||d.getDay()===6,other=c.view==="month"&&d.getMonth()!==c.month;
-  const el=document.createElement("div");el.className="cday"+(ok?"":" off")+(we||HOLI[k]?" we":"")+(other?" other":"")+(c.date===k?" on":"")+(a.length>=MAXDAY?" full":"");
-  el.tabIndex=ok?0:-1;el.setAttribute("role","button");el.setAttribute("aria-label",`${fmtLong(d)}, ${a.length} av ${MAXDAY} bokade`);
-  el.innerHTML=`<div class="ch"><span class="dn">${d.getDate()}${c.view==="week"?" "+MON[d.getMonth()].slice(0,3):""}</span><span class="cnt">${ok?a.length+"/"+MAXDAY:""}</span></div>${HOLI[k]?`<div class="hol">${HOLI[k]}</div>`:""}`;
+  const el=document.createElement("div");el.className="cday"+(ok?"":" off")+(we||HOLI[k]?" we":"")+(other?" other":"")+(c.date===k?" on":"")+(dayFull(a)?" full":"");
+  el.tabIndex=ok?0:-1;el.setAttribute("role","button");el.setAttribute("aria-label",`${fmtLong(d)}, Dag 1 ${nT(a,"d1")} av ${MAXT}, Dag 2 ${nT(a,"d2")} av ${MAXT}`);
+  el.innerHTML=`<div class="ch"><span class="dn">${d.getDate()}${c.view==="week"?" "+MON[d.getMonth()].slice(0,3):""}</span><span class="cnt">${ok?`<span class="c1${nT(a,"d1")>=MAXT?" fl":nT(a,"d1")?"":" z"}">D1 ${nT(a,"d1")}/${MAXT}</span><span class="c2${nT(a,"d2")>=MAXT?" fl":nT(a,"d2")?"":" z"}">D2 ${nT(a,"d2")}/${MAXT}</span>`:""}</span></div>${HOLI[k]?`<div class="hol">${HOLI[k]}</div>`:""}`;
   const list=document.createElement("div");list.className="chips";
-  const slots=c.view==="week"?MAXDAY:a.length;
-  for(let i=0;i<slots;i++){const b=a[i];const ch=document.createElement("div");
-    if(b){ch.className="chip "+b.type;ch.innerHTML=`<b>${esc(b.pid)}</b><span>${TYPEN[b.type]}${b.time?" · "+b.time:""}${b.slot&&c.view==="week"?" · "+esc(b.slot):""}</span>${c.view==="week"&&b.note?`<i>${esc(b.note)}</i>`:""}`}
-    else{ch.className="chip empty";ch.textContent=ok?"+ Boka":""}
-    list.appendChild(ch)}
+  const chip=b=>{const ch=document.createElement("div");ch.className="chip "+b.type;ch.innerHTML=`<b>${esc(b.pid)}</b><span>${TYPEN[b.type]}${b.time?" · "+b.time:""}${b.slot&&c.view==="week"?" · "+esc(b.slot):""}</span>${c.view==="week"&&b.note?`<i>${esc(b.note)}</i>`:""}`;return ch};
+  if(c.view==="week"){["d1","d2"].forEach(t=>{const h=document.createElement("div");h.className="slothead "+t;h.textContent=TYPEN[t];list.appendChild(h);
+      const bs=a.filter(b=>b.type===t);for(let i=0;i<MAXT;i++){if(bs[i])list.appendChild(chip(bs[i]));else{const e=document.createElement("div");e.className="chip empty";e.textContent=ok?"+ Boka":"";e.dataset.t=t;list.appendChild(e)}}})}
+  else a.slice().sort((x,y)=>x.type.localeCompare(y.type)||String(x.time).localeCompare(String(y.time))).forEach(b=>list.appendChild(chip(b)));
   el.appendChild(list);
-  if(ok){const go=()=>{c.date=k;save();renderCal();setTimeout(()=>{const f=$("bkId");if(f&&a.length<MAXDAY)f.focus()},0)};el.onclick=go;el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}}
+  if(ok){const go=e=>{c.date=k;const t=e&&e.target&&e.target.dataset?e.target.dataset.t:null;if(t)c.pref=t;save();renderCal();setTimeout(()=>{const f=$("bkId");if(f)f.focus()},0)};el.onclick=go;el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}}
   return el}
 function renderBkPanel(){
   const p=$("bkPanel"),k=S.cal.date;
-  if(!k){p.innerHTML=`<h2>Bokning</h2><p class="empty">Klicka på en dag i kalendern för att boka in testpersoner. Upp till ${MAXDAY} per dag.</p>`;return}
+  if(!k){p.innerHTML=`<h2>Bokning</h2><p class="empty">Klicka på en dag i kalendern för att boka in testpersoner. Upp till ${MAXT} Dag 1-tester och ${MAXT} Dag 2-tester per dag.</p>`;return}
   const d=fromIso(k),a=dayBk(k);
   const warn=(d.getDay()===0||d.getDay()===6)?"Det här är en helgdag.":HOLI[k]?`${HOLI[k]}.`:"";
-  p.innerHTML=`<h2>${fmtLong(d)}</h2>${warn?`<p class="warnline">${warn}</p>`:""}<p class="empty" style="margin:0 0 10px">${a.length} av ${MAXDAY} platser bokade</p>
+  p.innerHTML=`<h2>${fmtLong(d)}</h2>${warn?`<p class="warnline">${warn}</p>`:""}<p class="empty" style="margin:0 0 10px">Dag 1: ${nT(a,"d1")} av ${MAXT} · Dag 2: ${nT(a,"d2")} av ${MAXT}</p>
   <div id="bkList"></div>
-  ${a.length<MAXDAY?`<div class="form" style="margin-top:12px">
+  ${!dayFull(a)?`<div class="form" style="margin-top:12px">
     <label for="bkId">ID (6 siffror)</label><input type="text" id="bkId" inputmode="numeric" maxlength="6" pattern="\\d{6}" placeholder="123456" autocomplete="off">
-    <label for="bkType">Testdag</label><select id="bkType"><option value="d1">Dag 1 – labbtester</option><option value="d2">Dag 2 – fysiologiska tester</option></select>
+    <label for="bkType">Testdag</label><select id="bkType"><option value="d1"${nT(a,"d1")>=MAXT?" disabled":""}>Dag 1 – labbtester${nT(a,"d1")>=MAXT?" (fullt)":""}</option><option value="d2"${nT(a,"d2")>=MAXT?" disabled":""}>Dag 2 – fysiologiska tester${nT(a,"d2")>=MAXT?" (fullt)":""}</option></select>
     <label for="bkSlot">Plats i schemat</label><select id="bkSlot"></select>
     <label for="bkTime">Starttid</label><input type="time" id="bkTime" step="300">
     <label for="bkNote">Anteckning</label><input type="text" id="bkNote" placeholder="valfritt">
@@ -787,23 +797,23 @@ function renderBkPanel(){
     r.innerHTML=`<div><b>${esc(b.pid)}</b> · ${TYPEN[b.type]}${b.time?" · "+b.time:""}${b.slot?" · "+esc(b.slot):""}${b.note?`<br><span class="empty">${esc(b.note)}</span>`:""}${others.length?`<br><span class="empty">Även: ${others.join(", ")}</span>`:""}</div>`;
     const bt=document.createElement("div");bt.className="bkbtns";
     if(b.type==="d1"&&!allBk().some(x=>x.pid===b.pid&&x.type==="d2")){const nx=document.createElement("button");nx.className="btn";nx.textContent="Boka Dag 2";nx.title="Boka Dag 2 första lediga vardag 1–3 dagar senare";
-      nx.onclick=()=>{for(let g=1;g<=3;g++){const dd=addD(d,g),kk=iso(dd);if(!inRange(dd)||dd.getDay()===0||dd.getDay()===6||HOLI[kk])continue;if((S.bookings[kk]||[]).length<MAXDAY){snap();const st=slotTimes("d2");const used=(S.bookings[kk]||[]).filter(x=>x.type==="d2").map(x=>x.slot);const s=st.find(x=>!used.includes(x.name))||{};
+      nx.onclick=()=>{for(let g=1;g<=3;g++){const dd=addD(d,g),kk=iso(dd);if(!inRange(dd)||dd.getDay()===0||dd.getDay()===6||HOLI[kk])continue;if(nT(S.bookings[kk]||[],"d2")<MAXT){snap();const st=slotTimes("d2");const used=(S.bookings[kk]||[]).filter(x=>x.type==="d2").map(x=>x.slot);const s=st.find(x=>!used.includes(x.name))||{};
           dayBk(kk).push({pid:b.pid,type:"d2",slot:s.name||"",time:s.time||"",note:""});save();renderCal();toast(`ID ${b.pid} bokad Dag 2 ${fmtLong(dd).toLowerCase()}`);return}}
         toast("Ingen ledig vardag 1–3 dagar senare")};bt.appendChild(nx)}
     const rm=document.createElement("button");rm.className="btn";rm.textContent="Ta bort";rm.onclick=()=>{snap();a.splice(i,1);if(!a.length)delete S.bookings[k];save();renderCal();toast(`Bokning för ${b.pid} borttagen – Ångra finns`)};bt.appendChild(rm);
     r.appendChild(bt);L.appendChild(r)});
-  if(a.length>=MAXDAY)return;
+  if(dayFull(a))return;
   const fillSlots=()=>{const t=$("bkType").value,st=slotTimes(t),used=a.filter(x=>x.type===t).map(x=>x.slot);
     $("bkSlot").innerHTML=`<option value="">Ingen</option>`+st.map(s=>`<option value="${esc(s.name)}"${used.includes(s.name)?" disabled":""}>${esc(s.name)}${s.time?" – "+s.time:""}${used.includes(s.name)?" (bokad)":""}</option>`).join("");
     const free=st.find(s=>!used.includes(s.name));$("bkSlot").value=free?free.name:"";$("bkTime").value=free?free.time:""};
-  const prevType=a.length?a[a.length-1].type:"d1";$("bkType").value=prevType;fillSlots();
+  let prevType=S.cal.pref||(a.length?a[a.length-1].type:"d1");S.cal.pref=null;if(nT(a,prevType)>=MAXT)prevType=prevType==="d1"?"d2":"d1";$("bkType").value=prevType;fillSlots();
   $("bkType").onchange=fillSlots;
   $("bkSlot").onchange=()=>{const s=slotTimes($("bkType").value).find(x=>x.name===$("bkSlot").value);if(s)$("bkTime").value=s.time};
   $("bkId").oninput=e=>{e.target.value=e.target.value.replace(/\D/g,"").slice(0,6);const v=e.target.value;
     const ex=v.length===6?allBk().filter(x=>x.pid===v):[];$("bkMsg").textContent=ex.length?`Redan bokad: ${ex.map(x=>TYPEN[x.type]+" "+x.date).join(", ")}`:""};
   const add=()=>{const id=$("bkId").value.trim();
     if(!/^\d{6}$/.test(id)){$("bkMsg").textContent="ID ska vara exakt 6 siffror";$("bkId").focus();return}
-    const t=$("bkType").value;if(allBk().some(x=>x.pid===id&&x.date===k)){$("bkMsg").textContent="ID:t är redan bokat den här dagen";return}
+    const t=$("bkType").value;if(nT(a,t)>=MAXT){$("bkMsg").textContent=`${TYPEN[t]} är fullbokad den här dagen`;return}if(allBk().some(x=>x.pid===id&&x.date===k)){$("bkMsg").textContent="ID:t är redan bokat den här dagen";return}
     snap();a.push({pid:id,type:t,slot:$("bkSlot").value,time:$("bkTime").value,note:$("bkNote").value.trim()});S.bookings[k]=a;save();renderCal();toast(`ID ${id} bokad ${TYPEN[t]}`);
     const f=$("bkId");if(f)f.focus()};
   $("bkAdd").onclick=add;["bkId","bkNote"].forEach(id=>$(id).onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();add()}});
