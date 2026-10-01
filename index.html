@@ -135,6 +135,18 @@ aside.calside>.card{width:100%}
 .bkbtns{display:flex;flex-direction:column;gap:4px}
 .bkbtns .btn{padding:3px 8px;font-size:.85rem}
 .warnline{background:var(--warn-soft);color:var(--warn);padding:6px 8px;border-radius:6px;margin:0 0 8px;font-size:.9rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.boardwrap{display:grid;grid-template-columns:380px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.boardwrap{grid-template-columns:minmax(0,1fr)}}
+.compose textarea{width:100%;margin-top:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:10px;font:inherit;resize:vertical;min-height:120px}
+.notes{display:flex;flex-direction:column;gap:10px}
+.note{background:var(--bg);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:8px;padding:10px 14px}
+.note header{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.note time{color:var(--muted);font-size:.9rem}
+.note .av{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem}
+.note .x{margin-left:auto;border:0;background:none;color:var(--muted);cursor:pointer;font:inherit;font-size:.85rem;padding:2px 6px;border-radius:5px}
+.note .x:hover{color:var(--danger)}
+.note p{margin:8px 0 2px;white-space:pre-wrap;overflow-wrap:anywhere}
 .selbox{position:absolute;z-index:6;border:1.5px dashed var(--brand);background:color-mix(in srgb,var(--brand) 12%,transparent);pointer-events:none;display:none;border-radius:3px}
 .movetip{position:fixed;z-index:30;background:var(--ink);color:var(--bg);padding:3px 8px;border-radius:6px;font-size:.85rem;pointer-events:none;display:none}
 .track{cursor:crosshair}
@@ -174,7 +186,7 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
       <p class="sub" id="subt">Dra ett moment för att flytta det, dra i högerkanten för att ändra längd. Klicka för att redigera. Markera flera med Shift-klick eller genom att dra en ruta på tom yta.</p>
     </div>
     <div class="tools"><span id="syncStat" class="field" style="align-self:center"></span>
-      <div class="seg" role="group" aria-label="Vy"><button data-app="schema">Schema</button><button data-app="cal">Kalender och bokning</button></div>
+      <div class="seg" role="group" aria-label="Vy"><button data-app="schema">Schema</button><button data-app="cal">Kalender och bokning</button><button data-app="board">Anslagstavla</button></div>
       <button class="btn" id="undo" title="Ångra (Ctrl+Z)">Ångra</button>
       <button class="btn" id="pngBtn">Spara som bild</button>
       <button class="btn" id="sheetBtn">Google Sheets</button>
@@ -233,6 +245,24 @@ dialog textarea{width:100%;height:260px;font-family:ui-monospace,monospace;font-
         <div class="card" id="bkPanel"></div>
         <div class="card"><h2>Att kontrollera</h2><div id="calIssues"></div></div>
       </aside>
+    </div>
+  </section>
+  <section id="boardView" style="display:none">
+    <div class="boardwrap">
+      <div class="card compose">
+        <h2>Nytt meddelande</h2>
+        <div class="form">
+          <label for="bdAuthor">Från</label><select id="bdAuthor"></select>
+        </div>
+        <label for="bdText" class="sr">Meddelande</label>
+        <textarea id="bdText" rows="5" maxlength="2000" placeholder="Skriv ett meddelande till de andra testledarna …"></textarea>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px"><button class="btn primary" id="bdPost">Publicera</button><span class="empty">Ctrl + Enter publicerar</span><span id="bdLen" class="empty" style="margin-left:auto"></span></div>
+        <p class="empty" style="margin:12px 0 0">Listan med namn hämtas från testledarna i schemat. Lägg till eller byt namn under Schema → Testledare.</p>
+      </div>
+      <div class="card">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px"><h2 style="margin:0">Anslagstavla</h2><span id="bdCount" class="empty"></span><div class="seg" id="bdFilter" role="group" aria-label="Filtrera" style="margin-left:auto"></div></div>
+        <div id="bdList" class="notes"></div>
+      </div>
     </div>
   </section>
 </div>
@@ -302,7 +332,7 @@ let sel=null,multi=new Set();const undoStack=[];
 function setSel(x){sel=x;multi=new Set(x?[x]:[])}
 const isSel=id=>multi.has(id);
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(typeof schedulePush==="function")schedulePush()};
-const snap=()=>{undoStack.push(JSON.stringify({days:S.days,bookings:S.bookings||{}}));if(undoStack.length>60)undoStack.shift();$("undo").disabled=false};
+const snap=()=>{undoStack.push(JSON.stringify({days:S.days,bookings:S.bookings||{},board:S.board||[],boardDel:S.boardDel||[]}));if(undoStack.length>60)undoStack.shift();$("undo").disabled=false};
 const $=id=>document.getElementById(id);
 const RO=()=>S.day==="all";
 function combined(){
@@ -620,9 +650,9 @@ document.querySelectorAll("[data-day]").forEach(x=>x.onclick=()=>{S.day=x.datase
 document.querySelectorAll("[data-mode]").forEach(x=>x.onclick=()=>{S.mode=x.dataset.mode;save();render()});
 $("zoom").oninput=e=>{S.zoom=+e.target.value;save();render()};
 $("deadline").onchange=e=>{if(e.target.value){S.deadline=t2m(e.target.value);save();render()}};
-$("undo").onclick=()=>{if(!undoStack.length)return;const u=JSON.parse(undoStack.pop());if(u.days&&u.days.d1){S.days=u.days;S.bookings=u.bookings||{}}else S.days=u;save();R=range();render();if(S.app==="cal")renderCal();toast("Ångrat")};
+$("undo").onclick=()=>{if(!undoStack.length)return;const u=JSON.parse(undoStack.pop());if(u.days&&u.days.d1){S.days=u.days;S.bookings=u.bookings||{};if(u.board){const back=u.board.filter(m=>!S.board.some(x=>x.id===m.id)).map(m=>m.id);S.board=u.board;S.boardDel=(S.boardDel||[]).filter(id=>!back.includes(id))}}else S.days=u;save();R=range();render();if(S.app==="cal")renderCal();if(S.app==="board")renderBoard();toast("Ångrat")};
 document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){e.preventDefault();$("undo").click()}});
-$("resetBtn").onclick=()=>{if(!confirm("Återställ båda dagarna till det ursprungliga förslaget? Dina ändringar i schemat försvinner (bokningarna i kalendern ligger kvar)."))return;snap();const z=S.zoom,day=S.day,mode=S.mode,bk=S.bookings,cl=S.cal,ap=S.app;S=defaults();S.zoom=z;S.day=day;S.mode=mode;S.bookings=bk||{};S.cal=cl;S.app=ap;setSel(null);save();R=range();render();toast("Förslaget återställt")};
+$("resetBtn").onclick=()=>{if(!confirm("Återställ båda dagarna till det ursprungliga förslaget? Dina ändringar i schemat försvinner (bokningarna i kalendern ligger kvar)."))return;snap();const z=S.zoom,day=S.day,mode=S.mode,bk=S.bookings,cl=S.cal,ap=S.app,bd=S.board,bdd=S.boardDel;S=defaults();S.zoom=z;S.day=day;S.mode=mode;S.bookings=bk||{};S.cal=cl;S.app=ap;S.board=bd||[];S.boardDel=bdd||[];setSel(null);save();R=range();render();toast("Förslaget återställt")};
 $("addPerson").onclick=()=>{snap();const d=D();
   const nums=d.persons.map(p=>+((p.name.match(/^P(\d+)$/)||[])[1]||0));const n=Math.max(0,...nums)+1,id="p"+nid(),name="P"+n;
   const firstOf=pid=>{const bs=d.blocks.filter(b=>b.pid===pid);return bs.length?Math.min(...bs.map(b=>b.start)):null};
@@ -687,20 +717,21 @@ const SHEET_TOKEN_DEFAULT=""; // samma kod som TOKEN i Apps Script
 const cfg=()=>{let c={};try{c=JSON.parse(localStorage.getItem("brocold-sheet")||"{}")}catch(e){}return{url:c.url||SHEET_URL_DEFAULT,token:c.token||SHEET_TOKEN_DEFAULT}};
 const setStat=(t,err)=>{const e=$("syncStat");e.textContent=t;e.style.color=err?"var(--danger)":"var(--muted)"};
 let lastPushed=null,pushT=null,pulling=false;
-const payload=()=>JSON.stringify({days:S.days,deadline:S.deadline,bookings:S.bookings||{}});
+const payload=()=>JSON.stringify({days:S.days,deadline:S.deadline,bookings:S.bookings||{},board:S.board||[],boardDel:S.boardDel||[]});
 function schedulePush(){const c=cfg();if(!c.url||pulling)return;const p=payload();if(p===lastPushed)return;
   setStat("Sparar till kalkylarket …");clearTimeout(pushT);pushT=setTimeout(()=>push(p),1200)}
 async function push(p){const c=cfg();
   try{const r=await fetch(c.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({token:c.token,data:JSON.parse(p)})});
-    const j=await r.json();if(!j.ok)throw new Error(j.error||"fel");lastPushed=p;setStat("Sparat i kalkylarket "+new Date().toLocaleTimeString("sv-SE",{hour:"2-digit",minute:"2-digit"}))}
+    const j=await r.json();if(!j.ok)throw new Error(j.error||"fel");
+    if(Array.isArray(j.board)){S.board=j.board;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(S.app==="board")renderBoard();lastPushed=payload()}else lastPushed=p;setStat("Sparat i kalkylarket "+new Date().toLocaleTimeString("sv-SE",{hour:"2-digit",minute:"2-digit"}))}
   catch(e){setStat("Kunde inte spara till kalkylarket – ändringen finns kvar lokalt",true)}}
 async function pull(showToast){const c=cfg();if(!c.url){setStat("Kalkylark: inte kopplat");return}
   setStat("Hämtar från kalkylarket …");
   try{const r=await fetch(c.url+(c.url.includes("?")?"&":"?")+"token="+encodeURIComponent(c.token));const j=await r.json();
     if(!j.ok)throw new Error(j.error||"fel");
-    if(j.data&&j.data.days&&j.data.days.d1){pulling=true;S.days=j.data.days;if(j.data.deadline)S.deadline=j.data.deadline;if(j.data.bookings)S.bookings=j.data.bookings;
+    if(j.data&&j.data.days&&j.data.days.d1){pulling=true;S.days=j.data.days;if(j.data.deadline)S.deadline=j.data.deadline;if(j.data.bookings)S.bookings=j.data.bookings;if(Array.isArray(j.data.board))S.board=j.data.board;if(Array.isArray(j.data.boardDel))S.boardDel=Array.from(new Set((S.boardDel||[]).concat(j.data.boardDel)));
       S.days.d1.blocks.concat(S.days.d2.blocks).forEach(b=>{if(b.lokal===undefined)b.lokal=""});
-      lastPushed=payload();setSel(null);save();R=range();render();if(S.app==="cal")renderCal();pulling=false;
+      lastPushed=payload();setSel(null);save();R=range();render();if(S.app==="cal")renderCal();if(S.app==="board")renderBoard();pulling=false;
       setStat("Hämtat från kalkylarket "+(j.updated?new Date(j.updated).toLocaleString("sv-SE",{dateStyle:"short",timeStyle:"short"}):""));if(showToast)toast("Schemat hämtat från kalkylarket")}
     else{setStat("Kalkylarket är tomt – sparar nuvarande schema");lastPushed=null;schedulePush()}}
   catch(e){pulling=false;setStat(j_err(e),true)}}
@@ -784,7 +815,7 @@ function renderBkPanel(){
   p.innerHTML=`<h2>${fmtLong(d)}</h2>${warn?`<p class="warnline">${warn}</p>`:""}<p class="empty" style="margin:0 0 10px">Dag 1: ${nT(a,"d1")} av ${MAXT} · Dag 2: ${nT(a,"d2")} av ${MAXT}</p>
   <div id="bkList"></div>
   ${!dayFull(a)?`<div class="form" style="margin-top:12px">
-    <label for="bkId">ID (6 siffror)</label><input type="text" id="bkId" inputmode="numeric" maxlength="6" pattern="\\d{6}" placeholder="123456" autocomplete="off">
+    <label for="bkId">ID (6 tecken)</label><input type="text" id="bkId" maxlength="6" placeholder="t.ex. AB12C3" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;letter-spacing:.05em">
     <label for="bkType">Testdag</label><select id="bkType"><option value="d1"${nT(a,"d1")>=MAXT?" disabled":""}>Dag 1 – labbtester${nT(a,"d1")>=MAXT?" (fullt)":""}</option><option value="d2"${nT(a,"d2")>=MAXT?" disabled":""}>Dag 2 – fysiologiska tester${nT(a,"d2")>=MAXT?" (fullt)":""}</option></select>
     <label for="bkSlot">Plats i schemat</label><select id="bkSlot"></select>
     <label for="bkTime">Starttid</label><input type="time" id="bkTime" step="300">
@@ -809,24 +840,60 @@ function renderBkPanel(){
   let prevType=S.cal.pref||(a.length?a[a.length-1].type:"d1");S.cal.pref=null;if(nT(a,prevType)>=MAXT)prevType=prevType==="d1"?"d2":"d1";$("bkType").value=prevType;fillSlots();
   $("bkType").onchange=fillSlots;
   $("bkSlot").onchange=()=>{const s=slotTimes($("bkType").value).find(x=>x.name===$("bkSlot").value);if(s)$("bkTime").value=s.time};
-  $("bkId").oninput=e=>{e.target.value=e.target.value.replace(/\D/g,"").slice(0,6);const v=e.target.value;
+  $("bkId").oninput=e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-ZÅÄÖ0-9]/g,"").slice(0,6);const v=e.target.value;
     const ex=v.length===6?allBk().filter(x=>x.pid===v):[];$("bkMsg").textContent=ex.length?`Redan bokad: ${ex.map(x=>TYPEN[x.type]+" "+x.date).join(", ")}`:""};
   const add=()=>{const id=$("bkId").value.trim();
-    if(!/^\d{6}$/.test(id)){$("bkMsg").textContent="ID ska vara exakt 6 siffror";$("bkId").focus();return}
+    if(!/^[A-ZÅÄÖ0-9]{6}$/.test(id)){$("bkMsg").textContent="ID ska vara exakt 6 tecken (bokstäver och/eller siffror)";$("bkId").focus();return}
     const t=$("bkType").value;if(nT(a,t)>=MAXT){$("bkMsg").textContent=`${TYPEN[t]} är fullbokad den här dagen`;return}if(allBk().some(x=>x.pid===id&&x.date===k)){$("bkMsg").textContent="ID:t är redan bokat den här dagen";return}
     snap();a.push({pid:id,type:t,slot:$("bkSlot").value,time:$("bkTime").value,note:$("bkNote").value.trim()});S.bookings[k]=a;save();renderCal();toast(`ID ${id} bokad ${TYPEN[t]}`);
     const f=$("bkId");if(f)f.focus()};
   $("bkAdd").onclick=add;["bkId","bkNote"].forEach(id=>$(id).onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();add()}});
 }
-function showApp(){const cal=S.app==="cal";$("schedView").style.display=cal?"none":"";$("calView").style.display=cal?"":"none";
-  document.querySelectorAll("[data-app]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.app===S.app));
-  $("pngBtn").style.display=cal?"none":"";$("resetBtn").style.display=cal?"none":"";
-  $("subt").style.display=cal?"none":"";if(cal)renderCal()}
-document.querySelectorAll("[data-app]").forEach(x=>x.onclick=()=>{S.app=x.dataset.app;save();showApp();if(!cal())render()});
+function showApp(){const ap=S.app||"schema";
+  $("schedView").style.display=ap==="schema"?"":"none";$("calView").style.display=ap==="cal"?"":"none";$("boardView").style.display=ap==="board"?"":"none";
+  document.querySelectorAll("[data-app]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.app===ap));
+  $("pngBtn").style.display=ap==="schema"?"":"none";$("resetBtn").style.display=ap==="schema"?"":"none";
+  $("subt").style.display=ap==="schema"?"":"none";if(ap==="cal")renderCal();if(ap==="board")renderBoard()}
+document.querySelectorAll("[data-app]").forEach(x=>x.onclick=()=>{S.app=x.dataset.app;save();showApp();if(S.app==="schema")render()});
 const cal=()=>S.app==="cal";
 document.querySelectorAll("[data-cv]").forEach(x=>x.onclick=()=>{S.cal.view=x.dataset.cv;if(x.dataset.cv==="week"){const base=S.cal.date?fromIso(S.cal.date):new Date(2026,S.cal.month,1);S.cal.week=iso(monday(inRange(base)?base:CAL_FIRST))}else if(S.cal.week){const m=fromIso(S.cal.week);const mm=addD(m,3).getMonth();S.cal.month=Math.min(11,Math.max(9,mm))}save();renderCal()});
 $("calPrev").onclick=()=>{const c=S.cal;if(c.view==="month")c.month=Math.max(9,c.month-1);else c.week=iso(addD(fromIso(c.week),-7));save();renderCal()};
 $("calNext").onclick=()=>{const c=S.cal;if(c.view==="month")c.month=Math.min(11,c.month+1);else c.week=iso(addD(fromIso(c.week),7));save();renderCal()};
+
+/* ================= Anslagstavla ================= */
+if(!Array.isArray(S.board))S.board=[];
+if(!Array.isArray(S.boardDel))S.boardDel=[];
+const authors=()=>{const n=[];["d1","d2"].forEach(k=>(S.days[k]?S.days[k].leaders:[]).forEach(l=>{const v=String(l.name||"").trim();if(v&&!n.includes(v))n.push(v)}));return n};
+const authorCol=name=>{const n=String(name).trim().toLowerCase();if(NAMECOL[n])return NAMECOL[n];for(const k of ["d1","d2"]){const l=(S.days[k]?S.days[k].leaders:[]).find(x=>String(x.name).trim().toLowerCase()===n);if(l&&TLC[l.id])return TLC[l.id]}return["--none","--nonei"]};
+let boardFilter="";
+function renderBoard(){
+  const au=authors();let me="";try{me=localStorage.getItem("brocold-author")||""}catch(e){}
+  if(!au.includes(me))me=au[0]||"";
+  $("bdAuthor").innerHTML=au.map(a=>`<option value="${esc(a)}">${esc(a)}</option>`).join("");$("bdAuthor").value=me;
+  const fl=$("bdFilter");fl.innerHTML="";[""].concat(au).forEach(a=>{const b=document.createElement("button");b.textContent=a||"Alla";b.setAttribute("aria-pressed",boardFilter===a);b.onclick=()=>{boardFilter=a;renderBoard()};fl.appendChild(b)});
+  const list=$("bdList"),msgs=S.board.filter(m=>!boardFilter||m.author===boardFilter).sort((a,b)=>b.ts-a.ts);
+  $("bdCount").textContent=`${S.board.length} ${S.board.length===1?"meddelande":"meddelanden"}`;
+  if(!msgs.length){list.innerHTML=`<p class="empty">Inga meddelanden ${boardFilter?"från "+esc(boardFilter)+" ":""}ännu.</p>`;return}
+  list.innerHTML="";
+  msgs.forEach(m=>{const c=authorCol(m.author),el=document.createElement("article");el.className="note";
+    el.style.borderLeftColor=`var(${c[0]})`;
+    const dt=new Date(m.ts);
+    el.innerHTML=`<header><span class="av" style="background:var(${c[0]});color:var(${c[1]})">${esc(m.author.slice(0,1).toUpperCase())}</span><b>${esc(m.author)}</b><time datetime="${dt.toISOString()}">${dt.toLocaleString("sv-SE",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</time></header><p></p>`;
+    el.querySelector("p").textContent=m.text;
+    const rm=document.createElement("button");rm.className="x";rm.textContent="Ta bort";rm.setAttribute("aria-label","Ta bort meddelandet");
+    rm.onclick=()=>{snap();S.board=S.board.filter(x=>x.id!==m.id);if(!S.boardDel.includes(m.id))S.boardDel.push(m.id);save();renderBoard();toast("Meddelandet borttaget – Ångra finns")};
+    el.querySelector("header").appendChild(rm);list.appendChild(el)});
+}
+function postNote(){const t=$("bdText").value.trim(),a=$("bdAuthor").value;
+  if(!a){toast("Lägg till testledare under Schema först");return}
+  if(!t){$("bdText").focus();return}
+  snap();S.board.push({id:"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),author:a,text:t.slice(0,2000),ts:Date.now()});
+  try{localStorage.setItem("brocold-author",a)}catch(e){}
+  $("bdText").value="";$("bdLen").textContent="";save();renderBoard();toast("Meddelandet publicerat")}
+$("bdPost").onclick=postNote;
+$("bdText").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();postNote()}});
+$("bdText").addEventListener("input",e=>{const n=e.target.value.length;$("bdLen").textContent=n>1500?`${n}/2000`:""});
+$("bdAuthor").onchange=e=>{try{localStorage.setItem("brocold-author",e.target.value)}catch(err){}};
 
 $("grid").addEventListener("pointerdown",startBox);
 render();
