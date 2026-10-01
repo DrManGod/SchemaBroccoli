@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --lk-alabb:#D9822B;--lk-bmc:#7B4FB8;--lk-ltiv:#1F7A8C;--lk-dxa:#C23B6E;--lk-1210:#8C6A43;--board:#ECEFEC;
+  --lk-alabb:#D9822B;--lk-bmc:#7B4FB8;--lk-ltiv:#1F7A8C;--lk-dxa:#C23B6E;--lk-1230:#8C6A43;--board:#ECEFEC;
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
   --bg:#F7F9F7;--panel:#FFFFFF;--ink:#17231C;--muted:#5B6A61;--line:#DCE3DE;--grid:#EDF1EE;
   --brand:#1E5A3C;--brand-soft:#E3EFE7;--danger:#B3261E;--danger-soft:#FBE9E7;--warn:#8A5A00;--warn-soft:#FFF3D6;
@@ -292,7 +292,7 @@ const KEY="brocold-schema-v1";
 const TLC={TL1:["--tl1","--tl1i"],TL2:["--tl2","--tl2i"],TL3:["--tl3","--tl3i"],TL4:["--tl4","--tl4i"],TL5:["--tl5","--tl5i"],TL6:["--tl6","--tl6i"]};const MAXTL=6;
 const NAMECOL={eva:["--tly","--tlyi"]};
 const tc=id=>{const l=(typeof D==="function"?D():null);const x=l&&l.leaders.find(y=>y.id===id);const n=x&&String(x.name||"").trim().toLowerCase();return (n&&NAMECOL[n])||TLC[id]};
-const LOK=[{id:"Ålabb",c:"--lk-alabb"},{id:"BMC",c:"--lk-bmc"},{id:"LTIV",c:"--lk-ltiv"},{id:"DXA-rum",c:"--lk-dxa"},{id:"1210",c:"--lk-1210"}];
+const LOK=[{id:"Ålabb",c:"--lk-alabb"},{id:"BMC",c:"--lk-bmc"},{id:"LTIV",c:"--lk-ltiv"},{id:"DXA-rum",c:"--lk-dxa"},{id:"1230",c:"--lk-1230"}];
 const lokC=l=>{const x=LOK.find(o=>o.id===l);return x?`var(${x.c})`:""};
 const t2m=t=>{const[h,m]=t.split(":").map(Number);return h*60+m};
 const m2t=m=>{m=Math.max(0,Math.min(1439,Math.round(m)));return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0")};
@@ -349,6 +349,7 @@ function combined(){
 }
 let _cmb=null;
 const D=()=>S.day==="all"?(_cmb||combined()):S.days[S.day];
+Object.values(S.days).forEach(d=>d.blocks.forEach(x=>{if(x.lokal==="1210")x.lokal="1230"}));
 const lname=id=>{const l=D().leaders.find(x=>x.id===id);return l?l.name:id};
 const toast=msg=>{const t=$("toast");t.textContent=msg;t.classList.add("on");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("on"),2600)};
 const LABW=()=>RO()?(S.mode==="person"?170:200):S.mode==="person"?130:S.mode==="lokal"?150:260;
